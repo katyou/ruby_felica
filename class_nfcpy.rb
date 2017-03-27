@@ -58,22 +58,22 @@ end
 def start_file(unlock_user)
   time = Time.now
   File.open("#{unlock_user}.csv", "a") do |f|
-    f.puts("出社時間")
-    f.print(time.year, "年", time.month, "月", time.day, "日", time.min, "分")
+    f.print("出社時間")
+    f.print(time.month, "月", time.day, "日", time.min, "分\n")
   end
 end
 
 def finish_file(unlock_user)
   time = Time.now
   File.open("#{unlock_user}.csv", "a") do |f|
-    f.puts("退社時間")
-    f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分")
+    f.print("退社時間")
+    f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
   end
 end
 
-#user確認よう
+#user確認用
 masahiro = User.new( name = "masahiro", idm = "011606000A10FE00", present = 0 ) #presentを@current_presentの値を入れる
-ienaga   = User.new( name = "ienaga",   idm = "1111111", present = 0 )
+ienaga   = User.new( name = "ienaga",   idm = "5B4C07C0", present = 0 )
 mitsuko  = User.new( name = "mitsuko",  idm = "1111111111", present = 0 )
 
 users = [masahiro, ienaga, mitsuko]
