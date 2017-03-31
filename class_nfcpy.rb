@@ -32,7 +32,6 @@ def nfc()
 end
 
 def file_kanri_at(username, idm, status)
- puts status
  if status == 0 #出社した時
    print("Good Morning #{username}!\n")
    puts("Let's do our best today!")
@@ -40,22 +39,20 @@ def file_kanri_at(username, idm, status)
    time = Time.now
    File.open("#{username}.csv", "a") do |f|
      f.print("出社時刻")
-     f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
+     f.print(time.month, "月", time.day, "日", " ", time.hour, "：", time.min, "\n")
    end
    status_change = "update users set status = 1 where idm = '#{idm}';"
-   puts 'update内容'
    results = $db.query(status_change)
+
  elsif status == 1 #帰社した時
    print("Good lack #{username}!\n")
    puts("Let's do our best tomorrow!")
    time = Time.now
    File.open("#{username}.csv", "a") do |f|
      f.print("退社時刻")
-     f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
+     f.print(time.month, "月", time.day, "日", " ", time.hour, "：", time.min, "\n")
    end
    status_change = "update users set status = 0 where idm = '#{idm}';"
-   puts 'update内容'
-   puts (status_change)
    results = $db.query(status_change)
  end
 end
@@ -64,7 +61,7 @@ end
 $db = Mysql2::Client.new(:host => 'localhost', :user => 'root', :password => '')
 usedb = $db.query(%q{use ruby_nfcpy;})
 
-# $select_column = $db.query(%q{select id, name, idm, status from users;})
+#mysqlからそれぞれのカラムを取得してくる
 $select_name = $db.query(%q{select name from users;})
 $select_idm = $db.query(%q{select idm from users;})
 $select_status = $db.query(%q{select status from users;})
@@ -74,14 +71,8 @@ loop do
  $select_column = $db.query(%q{select id, name, idm, status from users;})
 
  $select_column.each do |user|
-   puts user
-   puts user['idm']
-
    if user['idm'] == unlock_user_id
-     puts '一致している'
      file_kanri_at(user['name'], user['idm'], user['status']) #value is idm.
-   else
-     puts '一致していない！'
    end
  end
 
