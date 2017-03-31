@@ -4,89 +4,88 @@
 # LOCK_ANGLE = "40"
 #
 # AUTO_LOCK = 40
+require 'mysql2'
+
 
 class User
-  def initialize(name = nil, idm = nil, present = 0)
-    @name = name
-    @exit_idm = idm
-    @current_present = present
+ def initialize(name = nil, idm = nil, present = 0)
+   @name = name
+   @exit_idm = idm
+   @current_present = present
 
-    #一時的な情報保持のためのインスタンス変数
-    @unlock_user = nil
-    @current_idm = nil
-  end
-
-  def hello
-    puts ("Hello #{@name}")
-  end
-
-  def searching_idm(get_idm)
-    if @exit_idm == get_idm# success
-      @unlock_user = @name
-      @current_idm = @exit_idm
-      puts ("tenko coffee #{@unlock_user}")
-    end
-
-    unless @unlock_user == nil#
-      if @current_present == 0
-        print("Good Morning #{@unlock_user}!\n")
-        puts("Let's do our best today!")
-        start_file(@unlock_user)
-        @current_present = 1
-      else
-        print("Good lack #{@unlock_user}!\n")
-        puts("Let's do our best tomorrow!")
-        finish_file(@unlock_user)
-        @current_present = 0
-      end
-    end
-  end
+   #一時的な情報保持のためのインスタンス変数
+   @unlock_user = nil
+   @current_idm = nil
+ end
 end
 
 def idm(text)
-  m = text.match(/ID=(.*?)\s/)
-  get_idm = m[1]
-  print("IDm = #{get_idm}\n")
-  return get_idm
+ m = text.match(/ID=(.*?)\s/)
+ get_idm = m[1]
+ print("IDm = #{get_idm}\n")
+ return get_idm
 end
 
 def nfc()
-  #ここに自分の環境にあったものを指定
-  `python ~/Desktop/practice_file/nfcpy/examples/tagtool.py`
+ #ここに自分の環境にあったものを指定
+ `python2 ~/Desktop/practice_file/ruby_nfcpy/nfcpy/examples/tagtool.py`
 end
 
-def start_file(unlock_user)
-  time = Time.now
-  File.open("#{unlock_user}.csv", "a") do |f|
-    f.print("出社時間")
-    f.print(time.month, "月", time.day, "日", time.min, "分\n")
-  end
+def file_kanri_at(username, idm, status)
+ puts status
+ if status == 0 #出社した時
+   print("Good Morning #{username}!\n")
+   puts("Let's do our best today!")
+
+   time = Time.now
+   File.open("#{username}.csv", "a") do |f|
+     f.print("出社時刻")
+     f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
+   end
+   status_change = "update users set status = 1 where idm = '#{idm}';"
+   puts 'update内容'
+   results = $db.query(status_change)
+ elsif status == 1 #帰社した時
+   print("Good lack #{username}!\n")
+   puts("Let's do our best tomorrow!")
+   time = Time.now
+   File.open("#{username}.csv", "a") do |f|
+     f.print("退社時刻")
+     f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
+   end
+   status_change = "update users set status = 0 where idm = '#{idm}';"
+   puts 'update内容'
+   puts (status_change)
+   results = $db.query(status_change)
+ end
 end
 
-def finish_file(unlock_user)
-  time = Time.now
-  File.open("#{unlock_user}.csv", "a") do |f|
-    f.print("退社時間")
-    f.print(time.month, "月", time.day, "日", time.hour, "時", time.min, "分\n")
-  end
-end
+#DBユーザー管理システム
+$db = Mysql2::Client.new(:host => 'localhost', :user => 'root', :password => '')
+usedb = $db.query(%q{use ruby_nfcpy;})
 
-#user確認用
-masahiro = User.new( name = "masahiro", idm = "011606000A10FE00", present = 0 ) #presentを@current_presentの値を入れる
-ienaga   = User.new( name = "ienaga",   idm = "5B4C07C0", present = 0 )
-mitsuko  = User.new( name = "mitsuko",  idm = "1111111111", present = 0 )
-
-users = [masahiro, ienaga, mitsuko]
-
+# $select_column = $db.query(%q{select id, name, idm, status from users;})
+$select_name = $db.query(%q{select name from users;})
+$select_idm = $db.query(%q{select idm from users;})
+$select_status = $db.query(%q{select status from users;})
 
 loop do
-  user_id = idm(nfc)
+ unlock_user_id = idm(nfc)
+ $select_column = $db.query(%q{select id, name, idm, status from users;})
 
-  users.each do |user|
-    user.searching_idm(user_id)
-  end
+ $select_column.each do |user|
+   puts user
+   puts user['idm']
 
-  print("Please wait reader restart...\n")
-  sleep(2)
+   if user['idm'] == unlock_user_id
+     puts '一致している'
+     file_kanri_at(user['name'], user['idm'], user['status']) #value is idm.
+   else
+     puts '一致していない！'
+   end
+ end
+
+ print("Please wait reader restart...\n")
+ sleep(2)
 
 end
