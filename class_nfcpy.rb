@@ -32,6 +32,10 @@ def nfc()
 end
 
 def file_kanri_at(username, idm, status)
+ #out = 1
+ #val = open("/sys/class/gpio/gpio27/value", "w")
+ #val.write(out)
+
  if status == 0 #出社した時
    print("Good Morning #{username}!\n")
    puts("Let's do our best today!")
@@ -55,20 +59,31 @@ def file_kanri_at(username, idm, status)
    status_change = "update users set status = 0 where idm = '#{idm}';"
    results = $db.query(status_change)
  end
+ #val.close
+ #out = 0
 end
 
 #DBユーザー管理システム
 $db = Mysql2::Client.new(:host => 'localhost', :user => 'root', :password => '')
-usedb = $db.query(%q{use ruby_nfcpy;})
+usedb = $db.query(%q{use kintai_kanri_development;})
 
 #mysqlからそれぞれのカラムを取得してくる
 $select_name = $db.query(%q{select name from users;})
 $select_idm = $db.query(%q{select idm from users;})
 $select_status = $db.query(%q{select status from users;})
 
+#ledのLチカ
+#exp = open("/sys/class/gpio/export", "w")
+#exp.write(27)
+#exp.close
+
+#dir = open("/sys/class/gpio/gpio27/direction", "w")
+#dir.write("out")
+#dir.close
+
 loop do
  unlock_user_id = idm(nfc)
- $select_column = $db.query(%q{select id, name, idm, status from users;})
+ $select_column = $db.query(%q{select id, name, card_id, status from users;})
 
  $select_column.each do |user|
    if user['idm'] == unlock_user_id
